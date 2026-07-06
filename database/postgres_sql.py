@@ -9,13 +9,7 @@ load_dotenv()
 
 
 def get_engine(database: str | None = None):
-    """
-    Create PostgreSQL connection.
-    
-    Args:
-        database: Database name. Defaults to POSTGRES_DATABASE from .env.
-    """
-     database_url = os.getenv("DATABASE_URL")
+    database_url = os.getenv("DATABASE_URL")
 
     if not database_url:
         raise ValueError("DATABASE_URL is missing in environment variables")
