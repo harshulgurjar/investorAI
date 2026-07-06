@@ -1,7 +1,7 @@
 import requests
 import streamlit as st
 
-API_BASE = "http://localhost:8080"
+API_BASE = st.secrets["API_BASE"]
 API = f"{API_BASE}/api"
 
 st.set_page_config(
