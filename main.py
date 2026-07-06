@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from database.create_table import create_tables
 from routes.health import router as health_router
 from routes.upload import router as upload_router
 from routes.chat import router as chat_router
@@ -11,6 +11,9 @@ app = FastAPI(
     description="Backend API for Investor Intelligence Platform",
     version="1.0.0"
 )
+@app.on_event("startup")
+def startup():
+    create_tables()
 
 # Allow Streamlit frontend to communicate with FastAPI
 app.add_middleware(
