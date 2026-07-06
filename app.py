@@ -14,7 +14,7 @@ st.caption("Streamlit Frontend + FastAPI Backend + FAISS + Groq + PostgreSQL")
 
 # Health check
 try:
-    health = requests.get(f"{API_BASE}/health", timeout=30)
+    health = requests.get(f"{API_BASE}/health", timeout=60)
 
     if health.status_code == 200:
         data = health.json()
