@@ -1,7 +1,7 @@
 from pydantic import BaseModel,Field
 from dotenv import load_dotenv
 from llm.groq_llm import get_structured_completion
-from vectorstore.faiss_store import Faissvectorstore,Retriver
+from vectorstore.faiss_store import FAISSVectorStore, Retriever
 
 load_dotenv()
 
@@ -16,8 +16,8 @@ class FinancialMetrics(BaseModel):
     risk_factors: str | list | None = Field(None, alias="Top Risk Factors")
     growth_drivers: str | list | None = Field(None, alias="Top Growth Drivers")
 
-def retrieve_context(retriver:Retriver,company:str,year:int)->str:
-    query=f"""
+def retrieve_context(retriever: Retriever, company: str, year: int) -> str:
+    query = f"""
     Annual report financial statements,
     income statement,
     balance sheet,
@@ -28,7 +28,7 @@ def retrieve_context(retriver:Retriver,company:str,year:int)->str:
     for {company} fiscal year {year}
     """
 
-    documents=retriver.invoke(
+    documents = retriever.invoke(
         query=query,
         company=company,
         year=year,
@@ -67,8 +67,8 @@ Instructions:
     """
 
 
-def extract_financial_metrices(retriever:Retriver,company:str,year:int)->dict:
-    context=retrieve_context(retriever,company,year)
+def extract_financial_metrics(retriever: Retriever, company: str, year: int) -> dict:
+    context = retrieve_context(retriever, company, year)
     prompt=build_extraction_prompt(company,year,context)
     metrics=get_structured_completion(prompt,FinancialMetrics)
     return metrics.model_dump(exclude_none=True)
