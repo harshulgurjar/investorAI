@@ -2,7 +2,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from langchain_community.vectorstores import FAISS
 
-class Faissvectorstore:
+class FAISSVectorStore:
     def __init__(self,index_path:str ="data/embeddings/faiss_index/index")->None:
         self.index_path=index_path
         self.db =None
@@ -25,10 +25,10 @@ class Faissvectorstore:
             self.db=FAISS.from_documents(chunks,embeddings)
 
         self.db.save_local(index_dir)
-        print(f"uploded{len(chunks)}chunks in FAISS.")
+        print(f"Uploaded {len(chunks)} chunks in FAISS.")
     
-class Retriver:
-    def __init__(self,vector_store:Faissvectorstore,embeddi=None):
+class Retriever:
+    def __init__(self,vector_store:FAISSVectorStore,embeddings=None):
         self.vector_store=vector_store
         self.embeddings=embeddings
         
