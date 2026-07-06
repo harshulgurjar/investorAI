@@ -15,34 +15,35 @@ def read_markdown(markdown_file:str)->str:
     """
     return Path(markdown_file).read_text(encoding="utf-8")
 
-def chunk_markdown(markdown_text:str,embeddings)->list[Document]:
+def chunk_markdown(markdown_file: str, embeddings) -> list[Document]:
     """
-    chunk markdown text using semantic chunker.
+    chunk markdown file using semantic chunker.
     Args:
-        markdown_text:markdown content to chunk.
-        embeddings:embedding model to use for chunking.
+        markdown_file: path to the markdown file.
+        embeddings: embedding model to use for chunking.
     Returns:
         list of document chunks.
     """
-    markdown_content =read_markdown(markdown_file)
-    splitter=SemanticChunker(embeddings=embeddings,breakpoint_threshold_type="percentile")
+    markdown_content = read_markdown(markdown_file)
+    splitter = SemanticChunker(embeddings=embeddings, breakpoint_threshold_type="percentile")
     return splitter.create_documents([markdown_content])
 
 if __name__ == "__main__":
     import os
     from langchain_groq import ChatGroq 
     from langchain_huggingface import HuggingFaceEmbeddings
-    embeddings=HuggingFaceEmbeddings(
+    embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
-    llm=ChatGroq(
-        groq_api_key=os.environ.get("GROQ_API_KEY"),
-        model="llama-3.3-70b-versatile"
-    )
+    groq_api_key = os.environ.get("GROQ_API_KEY")
     if not groq_api_key:
         raise RuntimeError("GROQ_API_KEY not found in environment variables")
-    markdown_file="data\markdown\2024_Apple.md"
-    chunks=chunk_markdown(markdown_file,embeddings)
+    llm = ChatGroq(
+        groq_api_key=groq_api_key,
+        model="llama-3.3-70b-versatile"
+    )
+    markdown_file = "data/markdown/2024_Apple.md"
+    chunks = chunk_markdown(markdown_file, embeddings)
     print(f"Generated {len(chunks)} chunks.")
     for index,chunk in enumerate(chunks[:3]):
         print("=" * 80)
