@@ -14,13 +14,18 @@ st.caption("Streamlit Frontend + FastAPI Backend + FAISS + Groq + PostgreSQL")
 
 # Health check
 try:
-    health = requests.get(f"{API_BASE}/health", timeout=5)
+    health = requests.get(f"{API_BASE}/health", timeout=30)
+
     if health.status_code == 200:
+        data = health.json()
         st.success("Backend connected")
     else:
-        st.warning("Backend running but health check failed")
-except Exception:
-    st.error("FastAPI backend not connected. Run: uvicorn main:app --reload --port 8080")
+        st.warning(f"Backend reached but health failed: {health.status_code}")
+        st.text(health.text)
+
+except Exception as e:
+    st.error(f"FastAPI backend not connected: {e}")
+    st.info(f"Trying to connect to: {API_BASE}")
 
 tab1, tab2, tab3 = st.tabs(["Upload Report", "Chat", "Saved Metrics"])
 
