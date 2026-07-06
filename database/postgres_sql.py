@@ -15,25 +15,12 @@ def get_engine(database: str | None = None):
     Args:
         database: Database name. Defaults to POSTGRES_DATABASE from .env.
     """
-    if database is None:
-        database = os.getenv("POSTGRES_DATABASE")
-    
-    host = os.getenv("POSTGRES_HOST")
-    port = os.getenv("POSTGRES_PORT")
-    user = os.getenv("POSTGRES_USER")
-    password = os.getenv("POSTGRES_PASSWORD")
+     database_url = os.getenv("DATABASE_URL")
 
-    # URL-encode credentials to handle special characters (e.g., @ in password)
-    encoded_user = quote(user, safe="")
-    encoded_password = quote(password, safe="")
+    if not database_url:
+        raise ValueError("DATABASE_URL is missing in environment variables")
 
-    connection_string = (
-        f"postgresql+psycopg2://"
-        f"{encoded_user}:{encoded_password}@{host}:{port}/{database}"
-        "?sslmode=require"
-    )
-
-    return create_engine(connection_string)
+    return create_engine(database_url)
 
 
 def create_database() -> None:
