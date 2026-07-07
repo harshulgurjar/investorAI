@@ -1,21 +1,16 @@
 from sqlalchemy import text
-
 from database.postgres_sql import get_engine
 
 
-def save_metrics(
-    company: str,
-    year: int,
-    metrics: dict
-) -> None:
-    """
-    Save extracted financial metrics to PostgreSQL.
+def to_text(value):
+    if value is None:
+        return None
+    if isinstance(value, list):
+        return "\n".join(str(v) for v in value)
+    return str(value)
 
-    Args:
-        company: Company name.
-        year: Fiscal year.
-        metrics: Extracted KPI dictionary.
-    """
+
+def save_metrics(company: str, year, metrics: dict) -> None:
     engine = get_engine()
 
     query = """
@@ -45,54 +40,25 @@ def save_metrics(
     )
     """
 
-    # Use both capitalized and lower‑case keys from the extraction model
     params = {
         "company": company,
-        "year": str(year),
-        "revenue": metrics.get("Revenue") or metrics.get("revenue"),
-        "net_income": metrics.get("Net Income") or metrics.get("net_income"),
-        "operating_income": metrics.get("Operating Income") or metrics.get("operating_income"),
-        "cash_flow": metrics.get("Cash Flow from Operating Activities") or metrics.get("cash_flow"),
-        "total_assets": metrics.get("Total Assets") or metrics.get("total_assets"),
-        "total_liabilities": metrics.get("Total Liabilities") or metrics.get("total_liabilities"),
-        "risk_factors": "\n".join(metrics.get("Top Risk Factors", []) or metrics.get("risk_factors", [])),
-        "growth_drivers": "\n".join(metrics.get("Top Growth Drivers", []) or metrics.get("growth_drivers", []))
+        "year": str(year) if year else "",
+        "revenue": to_text(metrics.get("Revenue") or metrics.get("revenue")),
+        "net_income": to_text(metrics.get("Net Income") or metrics.get("net_income")),
+        "operating_income": to_text(metrics.get("Operating Income") or metrics.get("operating_income")),
+        "cash_flow": to_text(
+            metrics.get("Cash Flow from Operating Activities")
+            or metrics.get("cash_flow")
+        ),
+        "total_assets": to_text(metrics.get("Total Assets") or metrics.get("total_assets")),
+        "total_liabilities": to_text(metrics.get("Total Liabilities") or metrics.get("total_liabilities")),
+        "risk_factors": to_text(metrics.get("Top Risk Factors") or metrics.get("risk_factors")),
+        "growth_drivers": to_text(metrics.get("Top Growth Drivers") or metrics.get("growth_drivers")),
     }
+
+    print("Saving metrics params:", params)
 
     with engine.begin() as connection:
         connection.execute(text(query), params)
 
-    print(
-        f"Successfully saved metrics for {company} {year}"
-    )
-
-if __name__ == "__main__":
-    sample_metrics = {
-        "Revenue": "$391,035",
-        "Net Income": "$93,736",
-        "Operating Income": "$123,216",
-        "Cash Flow from Operating Activities": "$118,254",
-        "Total Assets": "$364,980",
-        "Total Liabilities": "$308,030",
-        "Top Risk Factors": [
-            'Macroeconomic conditions including inflation, interest rates, and currency fluctuations could materially impact results.',
-            'High competition with aggressive pricing, short product life cycles, and rapid technological changes.',
-            'Dependence on single or limited sources for certain components, with potential supply shortages.',
-            'Exposure to foreign exchange rate fluctuations impacting sales and margins.',
-            'Legal and regulatory challenges, including significant tax disputes such as the State Aid Decision.'
-        ],
-        "Top Growth Drivers": [
-            'Increased Services revenue from advertising, App Store, and cloud services.',
-            'Higher Mac sales driven by increased laptop demand.',
-            'Continued strong iPhone sales performance.',
-            'Ingest your first company financial statement (e.g., 10-K, 10-Q reports in PDF format) using the sidebar uploader.',
-            'Our AI engine will parse the financial metrics, risks, and growth drivers.',
-            'Robust capital return program.'
-        ]
-    }
-
-    save_metrics(
-        company="Apple",
-        year=2024,
-        metrics=sample_metrics
-    )
+    print(f"Successfully saved metrics for {company} {year}")
