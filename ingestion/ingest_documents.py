@@ -12,56 +12,82 @@ from database.save_metrics import save_metrics
 
 load_dotenv()
 
+
 def parse_company_year(pdf_file: Path) -> tuple[str, str]:
-    """Parse company and year from a PDF filename.
-    Supports name like '2024_apple.pdf'
-    """
     stem = pdf_file.stem
     parts = stem.split("_")
+
     company = ""
     year = ""
+
     if parts and parts[0].isdigit():
         year = parts[0]
-        if len(parts) >= 2:
-            company = parts[1]
+        company = parts[1] if len(parts) >= 2 else stem
     elif len(parts) >= 2:
         company = parts[0]
         year = parts[1]
     else:
         company = stem
         year = ""
+
     return company, year
 
-def ingest_document(pdf_path: str, embeddings, vector_store) -> None:
-    pdf_file = Path(pdf_path)
-    company, year = parse_company_year(pdf_file)
-    print(f"Ingesting {pdf_file.name} for {company}, year={year!r}")
-    converter = PDFToMarkdownConverter()
-    markdown_file = converter.convert_pdf(pdf_path, output_dir="data/markdown")
-    chunks = chunk_markdown(
-        markdown_file=markdown_file,
-        embeddings=embeddings
-    )
-    print(f"Generated {len(chunks)} chunks for {pdf_file.name}")
-    vector_store.upload_chunks(
-        chunks=chunks,
-        embeddings=embeddings,
-        company=company,
-        year=year,
-        source_file=pdf_file.name
-    )
-    metrics = extract_financial_metrics(
-        retriever=Retriever(vector_store, embeddings),
-        company=company,
-        year=int(year) if year.isdigit() else None
-    )
 
-    if metrics:
-        save_metrics(
-            company=company,
-            year=int(year) if year.isdigit() else None,
-            metrics=metrics
+def ingest_document(pdf_path: str, embeddings, vector_store) -> None:
+    try:
+        pdf_file = Path(pdf_path)
+        company, year = parse_company_year(pdf_file)
+
+        print(f"Ingesting {pdf_file.name} for company={company}, year={year}")
+
+        converter = PDFToMarkdownConverter()
+
+        markdown_file = converter.convert_pdf(
+            pdf_path,
+            output_dir="data/markdown"
         )
+
+        chunks = chunk_markdown(
+            markdown_file=markdown_file,
+            embeddings=embeddings
+        )
+
+        print(f"Generated {len(chunks)} chunks for {pdf_file.name}")
+
+        vector_store.upload_chunks(
+            chunks=chunks,
+            embeddings=embeddings,
+            company=company,
+            year=year,
+            source_file=pdf_file.name
+        )
+
+        print("FAISS indexing completed")
+
+        year_value = int(year) if year.isdigit() else None
+
+        metrics = extract_financial_metrics(
+            retriever=Retriever(vector_store, embeddings),
+            company=company,
+            year=year_value
+        )
+
+        print("Extracted metrics:", metrics)
+
+        if metrics:
+            save_metrics(
+                company=company,
+                year=year_value,
+                metrics=metrics
+            )
+            print("Metrics saved successfully")
+        else:
+            print("No metrics extracted")
+
+    except Exception as e:
+        print(f"Error while ingesting document {pdf_path}: {e}")
+
+
 def ingest_directory(input_dir: str) -> None:
     embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
@@ -81,8 +107,7 @@ def ingest_directory(input_dir: str) -> None:
             embeddings=embeddings,
             vector_store=vector_store
         )
-    
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     ingest_directory("data/raw_pdfs")
-    
